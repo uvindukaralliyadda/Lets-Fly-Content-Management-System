@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+}
+
+@theme {
+  --color-brand-navy: #13087a;
+  --color-brand-ink: #120a5c;
+  --color-brand-primary: #1b0fd8;
+  --color-brand-yellow: #ffe600;
+  --font-sans: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+body {
+  min-height: 100%;
+}
