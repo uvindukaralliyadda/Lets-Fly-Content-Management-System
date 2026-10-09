@@ -6,7 +6,7 @@ const DEVELOPMENT_SECRET = "letsfly-local-demo-session-not-for-production";
 function getSecret(): string | null {
   const configured = process.env.DEMO_SESSION_SECRET;
   if (configured) return configured;
-  return process.env.NODE_ENV === "production" ? null : DEVELOPMENT_SECRET;
+  return DEVELOPMENT_SECRET;
 }
 
 export function hasDemoSessionSecret(): boolean {
