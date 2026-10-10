@@ -469,6 +469,35 @@ body.collapsed .main{margin-left:var(--side-w-collapsed)}
 .card{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:20px 22px;box-shadow:var(--shadow-sm)}
 .card + .card{margin-top:18px}
 .card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+
+/* Home page: hero slider manager */
+.hs-card{margin-bottom:22px}
+.hs-spec{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.hs-spec span{font-size:12.5px;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:5px 12px;color:var(--ink)}
+.hs-spec b{color:var(--primary)}
+.hs-slot{border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;background:#fff}
+.hs-slot-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.hs-slot-head h4{font-size:14.5px;font-weight:600;margin-right:auto}
+.hs-slot-head .btn{height:34px;padding:0 12px;font-size:12.5px}
+.hs-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.hs-fields label{display:block;font-size:12.5px;font-weight:600;margin-bottom:6px}
+.hs-fields input[type=text]{width:100%;height:40px;padding:0 12px;border:1px solid #dcdaf0;border-radius:10px;font:inherit;font-size:14px}
+.hs-fields input[type=text]:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(27,15,216,.12)}
+.hs-imgs{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px}
+.hs-up{border:1px dashed #cfcce8;border-radius:12px;padding:12px;background:var(--bg)}
+.hs-up .lbl{font-size:13px;font-weight:600;margin-bottom:2px}
+.hs-up .help{margin:0 0 10px;font-size:12px;color:var(--muted)}
+.hs-prev{border-radius:8px;background:#e9e8f5 center/cover no-repeat;display:grid;place-items:center;color:var(--muted);font-size:12.5px;margin-bottom:10px}
+.hs-prev.d{aspect-ratio:1920/800}
+.hs-prev.m{aspect-ratio:750/1000;max-width:170px}
+.hs-up-acts{display:flex;gap:8px;flex-wrap:wrap}
+.hs-up-acts .btn{height:34px;padding:0 12px;font-size:12.5px}
+.hs-err{color:var(--danger);font-size:12px;margin-top:6px}
+.hs-err:empty{display:none}
+.hs-foot{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.hs-empty{text-align:center;color:var(--muted);padding:26px 10px;border:1px dashed #cfcce8;border-radius:14px;margin-bottom:14px}
+.hs-sw{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600}
+@media(max-width:760px){.hs-imgs,.hs-fields{grid-template-columns:1fr}}
 .card-head h3{font-size:16px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .hint{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.5}
 
@@ -1363,6 +1392,8 @@ function greeting(){
 function renderHome(){
   const date = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   return `
+    <section class="card hs-card" id="heroSlider" aria-label="Hero slider">${heroHTML()}</section>
+
     <section class="welcome">
       <div>
         <h2>${greeting()}, Admin <span class="wave">👋</span></h2>
@@ -1392,6 +1423,151 @@ function renderHome(){
         </button>`).join('')}
     </section>`;
 }
+
+/* =========================================================
+   HERO SLIDER MANAGER (Home page)
+   Slots are kept in localStorage (prototype only).
+   ========================================================= */
+const HERO_KEY = 'lf_hero_slides';
+const HERO_MAX = 10;
+const HERO_SPEC = {
+  desktop: { w:1920, h:800,  label:'Desktop' },
+  mobile:  { w:750,  h:1000, label:'Mobile'  }
+};
+const heroEsc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function heroLoad(){
+  try { const v = JSON.parse(localStorage.getItem(HERO_KEY)); return Array.isArray(v) ? v : []; } catch(e){ return []; }
+}
+let heroSlides = heroLoad();
+let heroDirty = false;
+const heroErrs = {};   // "slotId:kind" -> message
+
+function heroUpIcon(){ return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>'; }
+function heroUploadBox(s, kind){
+  const sp = HERO_SPEC[kind], img = s[kind], err = heroErrs[s.id + ':' + kind] || '';
+  return `
+    <div class="hs-up">
+      <div class="lbl">${sp.label} version</div>
+      <p class="help">Exactly <b>${sp.w} × ${sp.h} px</b> · <b>WebP</b> (.webp) only</p>
+      <div class="hs-prev ${kind[0]}" style="${img ? `background-image:url('${img}')` : ''}">${img ? '' : 'No image'}</div>
+      <div class="hs-up-acts">
+        <button class="btn btn-ghost" data-hs="pick" data-id="${s.id}" data-kind="${kind}">${heroUpIcon()}${img ? 'Replace' : 'Upload'} image</button>
+        ${img ? `<button class="btn btn-ghost" data-hs="clear" data-id="${s.id}" data-kind="${kind}">Remove</button>` : ''}
+        <input type="file" accept="image/webp,.webp" hidden data-hs-file data-id="${s.id}" data-kind="${kind}">
+      </div>
+      <div class="hs-err" role="alert">${heroEsc(err)}</div>
+    </div>`;
+}
+function heroHTML(){
+  const n = heroSlides.length;
+  return `
+    <div class="card-head">
+      <div>
+        <h3>Hero Slider</h3>
+        <p class="hint">Banners shown at the top of the website home page. Add as many slots as you need (up to ${HERO_MAX}); each slot needs a desktop and a mobile image.</p>
+      </div>
+    </div>
+    <div class="hs-spec">
+      <span>Desktop: <b>${HERO_SPEC.desktop.w} × ${HERO_SPEC.desktop.h} px</b></span>
+      <span>Mobile: <b>${HERO_SPEC.mobile.w} × ${HERO_SPEC.mobile.h} px</b></span>
+      <span>Format: <b>WebP</b></span>
+    </div>
+    ${n ? heroSlides.map((s, i) => `
+      <div class="hs-slot" data-slot="${s.id}">
+        <div class="hs-slot-head">
+          <h4>Slot ${i + 1}</h4>
+          <label class="hs-sw"><input type="checkbox" data-hs-field="active" data-id="${s.id}" ${s.active ? 'checked' : ''}> Visible</label>
+          <button class="btn btn-ghost" data-hs="up" data-id="${s.id}" ${i === 0 ? 'disabled' : ''} aria-label="Move slot up">↑</button>
+          <button class="btn btn-ghost" data-hs="down" data-id="${s.id}" ${i === n - 1 ? 'disabled' : ''} aria-label="Move slot down">↓</button>
+          <button class="btn btn-ghost" data-hs="del" data-id="${s.id}">Delete</button>
+        </div>
+        <div class="hs-fields">
+          <div><label>Banner title (alt text)</label><input type="text" data-hs-field="title" data-id="${s.id}" value="${heroEsc(s.title)}" placeholder="e.g. Summer in Maldives"></div>
+          <div><label>Link URL (optional)</label><input type="text" data-hs-field="link" data-id="${s.id}" value="${heroEsc(s.link)}" placeholder="/holidays/maldives"></div>
+        </div>
+        <div class="hs-imgs">${heroUploadBox(s, 'desktop')}${heroUploadBox(s, 'mobile')}</div>
+      </div>`).join('') : '<div class="hs-empty">No hero slots yet. Add your first slot to get started.</div>'}
+    <div class="hs-foot">
+      <button class="btn btn-ghost" data-hs="add" ${n >= HERO_MAX ? 'disabled' : ''}>+ Add slot</button>
+      <button class="btn btn-primary" data-hs="save">Save hero slider</button>
+      <span class="hint" id="hsState">${heroDirty ? 'Unsaved changes' : ''}</span>
+    </div>`;
+}
+function heroRender(){
+  const el = document.getElementById('heroSlider');
+  if (el) el.innerHTML = heroHTML();
+}
+function heroMarkDirty(){
+  heroDirty = true;
+  const st = document.getElementById('hsState'); if (st) st.textContent = 'Unsaved changes';
+}
+function heroReadFile(file, kind){
+  return new Promise(resolve => {
+    const sp = HERO_SPEC[kind];
+    if (!/\.webp$/i.test(file.name) || file.type !== 'image/webp') return resolve({ error:'Only WebP (.webp) files are accepted.' });
+    const reader = new FileReader();
+    reader.onerror = () => resolve({ error:'Could not read the file.' });
+    reader.onload = () => {
+      const src = reader.result, im = new Image();
+      im.onerror = () => resolve({ error:'This file is not a valid WebP image.' });
+      im.onload = () => (im.naturalWidth === sp.w && im.naturalHeight === sp.h)
+        ? resolve({ src })
+        : resolve({ error:`Image is ${im.naturalWidth} × ${im.naturalHeight} px. ${sp.label} banners must be exactly ${sp.w} × ${sp.h} px.` });
+      im.src = src;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+document.addEventListener('change', async e => {
+  const f = e.target.closest('[data-hs-field]');
+  if (f){
+    const s = heroSlides.find(x => x.id === f.dataset.id); if (!s) return;
+    s[f.dataset.hsField] = f.type === 'checkbox' ? f.checked : f.value;
+    heroMarkDirty(); return;
+  }
+  const inp = e.target.closest('[data-hs-file]');
+  if (!inp || !inp.files[0]) return;
+  const s = heroSlides.find(x => x.id === inp.dataset.id); if (!s) return;
+  const kind = inp.dataset.kind, key = s.id + ':' + kind;
+  const res = await heroReadFile(inp.files[0], kind);
+  if (res.error) heroErrs[key] = res.error;
+  else { delete heroErrs[key]; s[kind] = res.src; heroMarkDirty(); }
+  heroRender();
+});
+document.addEventListener('input', e => {
+  const f = e.target.closest('input[data-hs-field][type=text]');
+  if (!f) return;
+  const s = heroSlides.find(x => x.id === f.dataset.id);
+  if (s){ s[f.dataset.hsField] = f.value; heroMarkDirty(); }
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-hs]'); if (!b) return;
+  const act = b.dataset.hs, id = b.dataset.id;
+  const i = heroSlides.findIndex(x => x.id === id);
+  if (act === 'add'){
+    if (heroSlides.length >= HERO_MAX) return;
+    heroSlides.push({ id:'hs' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), title:'', link:'', active:true, desktop:'', mobile:'' });
+    heroMarkDirty();
+  } else if (act === 'del'){
+    if (i < 0 || !confirm('Delete this slot and its images?')) return;
+    heroSlides.splice(i, 1); heroMarkDirty();
+  } else if (act === 'up' && i > 0){
+    [heroSlides[i - 1], heroSlides[i]] = [heroSlides[i], heroSlides[i - 1]]; heroMarkDirty();
+  } else if (act === 'down' && i >= 0 && i < heroSlides.length - 1){
+    [heroSlides[i + 1], heroSlides[i]] = [heroSlides[i], heroSlides[i + 1]]; heroMarkDirty();
+  } else if (act === 'pick'){
+    b.parentElement.querySelector('[data-hs-file]').click(); return;
+  } else if (act === 'clear' && i >= 0){
+    heroSlides[i][b.dataset.kind] = ''; delete heroErrs[id + ':' + b.dataset.kind]; heroMarkDirty();
+  } else if (act === 'save'){
+    const incomplete = heroSlides.findIndex(s => s.active && (!s.desktop || !s.mobile));
+    if (incomplete >= 0){ toast(`Slot ${incomplete + 1} needs both desktop and mobile images (or hide it).`); return; }
+    try { localStorage.setItem(HERO_KEY, JSON.stringify(heroSlides)); }
+    catch(err){ toast('Could not save: browser storage is full. Remove some images.'); return; }
+    heroDirty = false; toast('Hero slider saved');
+  } else return;
+  heroRender();
+});
 function renderPlaceholder(sec){
   return `
     <section class="empty">
@@ -4566,6 +4742,5 @@ window.PKG = {
 })();
 
 </script>
-<script>document.getElementById("confirmLogout")?.addEventListener("click",()=>window.parent.postMessage({type:"letsfly-cms-logout"},window.location.origin));</script>
 </body>
 </html>
