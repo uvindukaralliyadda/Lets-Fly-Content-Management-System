@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { DEMO_SESSION_COOKIE, isValidDemoSession } from "@/lib/demo-session";
 import CmsFrame from "@/components/cms/cms-frame";
+import "./cms.css";
 
 export const metadata = {
   title: "CMS | Let's Fly.lk",
