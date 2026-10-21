@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import HomeTab from "@/components/cms/home-tab";
+import InquiriesTab from "@/components/cms/inquiries-tab";
 
 const sections = [
   { id: "home", title: "Home" },
@@ -13,6 +14,7 @@ const sections = [
   { id: "cruises", title: "Cruises" },
   { id: "gallery", title: "Gallery" },
   { id: "rental", title: "Rental" },
+  { id: "inquiries", title: "Inquiries" },
 ];
 
 const navigationIcons: Record<string, ReactNode> = {
@@ -25,6 +27,7 @@ const navigationIcons: Record<string, ReactNode> = {
   cruises: <><path d="M2 20c2 1 4 1 6 0s4-1 6 0 4 1 6 0" /><path d="M4 17 3 12h18l-2 5M6 12V8h12v4M12 8V4" /></>,
   gallery: <><rect height="18" rx="2" width="18" x="3" y="3" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" /></>,
   rental: <><path d="M5 17h14M5 17a2 2 0 1 0 4 0M15 17a2 2 0 1 0 4 0" /><path d="M3 17v-5l2-5h11l3 5h2v5M5 12h16" /></>,
+  inquiries: <><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z" /><path d="M8 12h8M8 9h5" /></>,
 };
 
 function getSectionFromHash() {
@@ -105,7 +108,7 @@ export default function CmsFrame() {
 
   return (
     <main className="cms-app">
-      <div className="cms-home-shell" hidden={activeSection !== "home"}>
+      <div className="cms-home-shell">
         <aside aria-label="CMS navigation" className="cms-sidebar">
         <a className="cms-app-brand" href="/cms" onClick={(event) => {
           event.preventDefault();
@@ -133,16 +136,23 @@ export default function CmsFrame() {
           <span aria-hidden="true">↪</span>{loggingOut ? "Signing out…" : "Sign out"}
         </button>
         </aside>
-        <section className="cms-main">
+        <section className="cms-main" hidden={activeSection !== "home" && activeSection !== "inquiries"}>
           <header className="cms-app-header">
-            <div className="cms-app-page-heading"><span>CMS / Home</span><h1>Home</h1></div>
+            <div className="cms-app-page-heading">
+              <span>CMS / {currentTitle}</span>
+              <h1>{currentTitle}</h1>
+            </div>
           </header>
           <div className="cms-app-content">
-            <HomeTab onNavigate={navigate} />
+            {activeSection === "home" ? (
+              <HomeTab onNavigate={navigate} />
+            ) : (
+              <InquiriesTab />
+            )}
           </div>
         </section>
       </div>
-      {activeSection !== "home" && (
+      {activeSection !== "home" && activeSection !== "inquiries" && (
         <>
           <iframe
             className="cms-app-legacy"
