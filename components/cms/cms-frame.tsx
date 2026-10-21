@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import HomeTab from "@/components/cms/home/home-tab";
 import InquiriesTab from "@/components/cms/inquiries/inquiries-tab";
+import ProjectsTab from "@/components/cms/projects/projects-tab";
 
 const sections = [
   { id: "home", title: "Home" },
@@ -45,6 +46,7 @@ export default function CmsFrame() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
   const [activeRoute, setActiveRoute] = useState("home");
+  const [projectDirty, setProjectDirty] = useState(false);
 
   const signOut = useCallback(async () => {
     setLoggingOut(true);
@@ -98,6 +100,11 @@ export default function CmsFrame() {
   function navigate(section: string) {
     if (!sections.some((item) => item.id === section)) return;
     if (activeSection === section && activeRoute === section) return;
+    if (activeSection === "projects" && projectDirty && section !== "projects" &&
+        !window.confirm("You have unsaved changes to this project. If you leave now, they will be lost.")) {
+      return;
+    }
+    if (activeSection === "projects" && section !== "projects") setProjectDirty(false);
     setActiveSection(section);
     setActiveRoute(section);
     const hash = section === "home" ? "" : `#${section}`;
@@ -136,7 +143,7 @@ export default function CmsFrame() {
           <span aria-hidden="true">↪</span>{loggingOut ? "Signing out…" : "Sign out"}
         </button>
         </aside>
-        <section className="cms-main" hidden={activeSection !== "home" && activeSection !== "inquiries"}>
+        <section className="cms-main" hidden={activeSection !== "home" && activeSection !== "inquiries" && activeSection !== "projects"}>
           <header className="cms-app-header">
             <div className="cms-app-page-heading">
               <span>CMS / {currentTitle}</span>
@@ -146,13 +153,15 @@ export default function CmsFrame() {
           <div className="cms-app-content">
             {activeSection === "home" ? (
               <HomeTab onNavigate={navigate} />
-            ) : (
+            ) : activeSection === "inquiries" ? (
               <InquiriesTab />
+            ) : (
+              <ProjectsTab onDirtyChange={setProjectDirty} />
             )}
           </div>
         </section>
       </div>
-      {activeSection !== "home" && activeSection !== "inquiries" && (
+      {activeSection !== "home" && activeSection !== "inquiries" && activeSection !== "projects" && (
         <>
           <iframe
             className="cms-app-legacy"

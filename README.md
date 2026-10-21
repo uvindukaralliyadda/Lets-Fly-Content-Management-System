@@ -22,11 +22,10 @@ demo sign-in is disabled when this value is absent.
 - `/login` contains the React login form and preserves the original portal
   design and validation interactions.
 - `/cms` is protected by the Next.js proxy and server-side cookie verification.
-  Its Home tab is the React component in `components/cms/home-tab.tsx`; the
-  hero-slider editor preserves its existing browser-storage format and image
-  validation. The Inquiries tab is `components/cms/inquiries-tab.tsx`; it reads
-  and updates inquiry records from same-origin browser storage. Other tabs
-  continue to load from the same-origin legacy CMS iframe until migrated.
+  Its Home, Projects, and Inquiries tabs are React components in their
+  respective folders. Their browser-storage formats remain compatible with
+  the existing tabs. Other tabs continue to load from the same-origin legacy
+  CMS iframe until migrated.
 - `/api/cms-demo` serves the original CMS HTML only to a valid demo session.
   The legacy page remains the compatibility implementation and behavioral
   reference for tabs not yet migrated. The original source files remain
@@ -40,10 +39,12 @@ page are the example domains from the original source and must be configured.
 
 ## Migration boundary
 
-The login, application/session routing, and Home tab are React/TypeScript. The
-Home and Inquiries are React/TypeScript; the remaining CMS tabs still use the
-original standalone HTML/JavaScript inside a protected same-origin iframe as a
-compatibility bridge. Inquiries use the `lf_inquiries` local-storage key, with
+The login, application/session routing, Home, Projects, and Inquiries tabs are
+React/TypeScript; the remaining CMS tabs still use the original standalone
+HTML/JavaScript inside a protected same-origin iframe as a compatibility
+bridge. Projects use the `letsfly-cms-projects-v1` local-storage key, and
+`components/cms/projects/projects.json` contains the original sample projects.
+Inquiries use the `lf_inquiries` local-storage key, with
 records shaped as `{ id, createdAt, customerName, email?, phone?, category,
 message, status?, comments? }`. Categories are Outbound Travel, Travel Sri
 Lanka, Hotel Bookings, Trains, and Cruises. Missing status defaults to New;
