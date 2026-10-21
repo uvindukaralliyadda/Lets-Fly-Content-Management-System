@@ -1,5 +1,6 @@
 "use client";
 
+import "./home.css";
 import { useEffect, useState, type ReactNode } from "react";
 
 type HeroKind = "desktop" | "mobile";

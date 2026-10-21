@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import HomeTab from "@/components/cms/home-tab";
-import InquiriesTab from "@/components/cms/inquiries-tab";
+import HomeTab from "@/components/cms/home/home-tab";
+import InquiriesTab from "@/components/cms/inquiries/inquiries-tab";
 
 const sections = [
   { id: "home", title: "Home" },

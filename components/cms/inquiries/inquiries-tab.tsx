@@ -1,5 +1,6 @@
 "use client";
 
+import "./inquiries.css";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 const INQUIRIES_STORAGE_KEY = "lf_inquiries";
