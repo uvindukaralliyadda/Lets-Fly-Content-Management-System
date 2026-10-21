@@ -6,14 +6,20 @@ import "./projects.css";
 
 const STORAGE_KEY = "letsfly-cms-projects-v1";
 const VIEW_KEY = "cms-proj-view";
-const categories = { csr: "CSR", events: "Events", other: "Other" } as const;
+const categories = {
+  meetings: "Meetings",
+  incentives: "Incentives",
+  conventions: "Conventions",
+  exhibitions: "Exhibitions",
+} as const;
 type ProjectCategory = keyof typeof categories;
+type LegacyProjectCategory = "csr" | "events" | "other";
 type ProjectStatus = "draft" | "published";
 type ProjectImage = { src: string; alt: string; name?: string };
 interface Project {
   id: string;
   slug: string;
-  category: ProjectCategory | "";
+  category: ProjectCategory | LegacyProjectCategory | "";
   title: string;
   date: string;
   summary: string;
@@ -28,7 +34,7 @@ type SeedProject = (typeof seeds)[number];
 const seedProjects = (): Project[] => seeds.map((project: SeedProject, index) => ({
   id: `pj-${project.id}`,
   slug: project.id,
-  category: project.category as ProjectCategory,
+  category: project.category as LegacyProjectCategory,
   title: project.title,
   date: project.date,
   summary: project.summary || "",
@@ -38,6 +44,9 @@ const seedProjects = (): Project[] => seeds.map((project: SeedProject, index) =>
   status: project.id === "corporate-awards-night-colombo" ? "draft" : "published",
   updatedAt: Date.now() - (index + 1) * 5 * 3600_000,
 }));
+
+const categoryLabel = (category: Project["category"]) =>
+  category ? categories[category as ProjectCategory] ?? { csr: "CSR", events: "Events", other: "Other" }[category as LegacyProjectCategory] : "";
 
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, (character) => ({
@@ -226,9 +235,10 @@ export default function ProjectsTab({ onDirtyChange }: { onDirtyChange: (dirty: 
   }, [activeId, draft]);
   const counts = useMemo(() => ({
     all: projects.length,
-    csr: projects.filter((project) => project.category === "csr").length,
-    events: projects.filter((project) => project.category === "events").length,
-    other: projects.filter((project) => project.category === "other").length,
+    meetings: projects.filter((project) => project.category === "meetings").length,
+    incentives: projects.filter((project) => project.category === "incentives").length,
+    conventions: projects.filter((project) => project.category === "conventions").length,
+    exhibitions: projects.filter((project) => project.category === "exhibitions").length,
   }), [projects]);
   const filtered = useMemo(() => {
     const term = query.trim().toLocaleLowerCase();
@@ -299,8 +309,8 @@ export default function ProjectsTab({ onDirtyChange }: { onDirtyChange: (dirty: 
     const slug = slugify(draft.slug || draft.title);
     const validation = !draft.title.trim()
       ? "Add a project title."
-      : nextStatus === "published" && !draft.category
-        ? "Choose a category: CSR, Events or Other."
+      : nextStatus === "published" && !(draft.category in categories)
+        ? "Choose a category: Meetings, Incentives, Conventions or Exhibitions."
         : nextStatus === "published" && !slug
           ? "Add a page URL (slug)."
           : nextStatus === "published" && projects.some((project) => project.id !== draft.id && project.slug === slug)
@@ -465,11 +475,11 @@ export default function ProjectsTab({ onDirtyChange }: { onDirtyChange: (dirty: 
       {!activeEdit ? (
         <>
           <section className="project-page-heading">
-            <div><h2>Projects</h2><p>Manage the CSR initiatives, events and other projects shown on the website’s Projects page.</p></div>
+            <div><h2>Projects</h2><p>Manage meetings, incentives, conventions and exhibitions shown on the website’s Projects page.</p></div>
             <button className="project-primary" onClick={startNew} type="button">＋ Add Project</button>
           </section>
           <nav aria-label="Filter by category" className="project-category-tabs">
-            {(["all", "csr", "events", "other"] as const).map((item) => (
+            {(["all", "meetings", "incentives", "conventions", "exhibitions"] as const).map((item) => (
               <button aria-pressed={category === item} className={category === item ? "active" : ""} key={item}
                 onClick={() => setCategory(item)} type="button">
                 {item === "all" ? "All" : categories[item]} <span>{counts[item]}</span>
@@ -507,7 +517,7 @@ export default function ProjectsTab({ onDirtyChange }: { onDirtyChange: (dirty: 
             <div className="project-empty"><h3>No projects match your filters</h3><p>Try another category or search term.</p><button className="project-secondary" onClick={clearFilters} type="button">Clear filters</button></div>
           ) : (
             <div className={`project-cards ${view}`}>
-              <button className="project-add-card" onClick={startNew} type="button"><span>＋</span><b>Add new project</b><small>Create a CSR, event or other project with its description and photo gallery.</small></button>
+              <button className="project-add-card" onClick={startNew} type="button"><span>＋</span><b>Add new project</b><small>Create a meeting, incentive, convention or exhibition with its description and photo gallery.</small></button>
               {filtered.map((project) => (
                 <article className="project-card" key={project.id}>
                   <button className="project-card-cover" onClick={() => startEdit(project)} style={backgroundStyle(project.cover.src)} type="button">
@@ -515,7 +525,7 @@ export default function ProjectsTab({ onDirtyChange }: { onDirtyChange: (dirty: 
                     {imageCount(project) > 1 && <span className="project-photo-count">{imageCount(project)} photos</span>}
                   </button>
                   <div className="project-card-body">
-                    <span className={`project-category ${project.category || "none"}`}>{categories[project.category as ProjectCategory] || "No category"}</span>
+                    <span className={`project-category ${project.category || "none"}`}>{categoryLabel(project.category) || "No category"}</span>
                     <h3>{project.title || "Untitled project"}</h3>
                     <p>{project.summary || <i>No summary yet</i>}</p>
                     <small>{dateLabel(project.date)} · Updated {timeAgo(project.updatedAt)}</small>
@@ -539,7 +549,7 @@ export default function ProjectsTab({ onDirtyChange }: { onDirtyChange: (dirty: 
           <button className="project-back" onClick={closeEditor} type="button">← Back to Projects</button>
           <header className="project-editor-heading">
             <div className="project-editor-thumb" style={backgroundStyle(draft.cover.src)} />
-            <div><span className={`project-category ${draft.category || "none"}`}>{categories[draft.category as ProjectCategory] || "No category yet"}</span><h2>{draft.title || (activeId === "new" ? "New project" : "Untitled project")}</h2><p>{dateLabel(draft.date)} · {imageCount(draft)} photos</p></div>
+            <div><span className={`project-category ${draft.category || "none"}`}>{categoryLabel(draft.category) || "No category yet"}</span><h2>{draft.title || (activeId === "new" ? "New project" : "Untitled project")}</h2><p>{dateLabel(draft.date)} · {imageCount(draft)} photos</p></div>
             <span className={`project-status ${draft.status}`}>{draft.status === "published" ? "Published" : "Draft"}</span>
           </header>
           <div className="project-editor-grid">
@@ -551,7 +561,7 @@ export default function ProjectsTab({ onDirtyChange }: { onDirtyChange: (dirty: 
                     {(Object.entries(categories) as [ProjectCategory, string][]).map(([key, label]) => (
                       <button aria-pressed={draft.category === key} className={`project-radio ${key}`} key={key} onClick={() => updateDraft({ category: key })} type="button">{label}</button>
                     ))}
-                  </div><small>CSR for community work, Events for conferences and launches, Other for group trips and everything else.</small></fieldset>
+                  </div><small>Choose whether this project is a meeting, incentive, convention or exhibition.</small></fieldset>
                   <label className="project-field full">Project title *<input maxLength={100} onChange={(event) => updateDraft({ title: event.target.value })} placeholder="e.g. Beach Clean-up at Mount Lavinia" value={draft.title} /></label>
                   <label className="project-field full">Page URL (slug) *<span className="project-slug"><span>letsfly.lk/projects/</span><input maxLength={80} onChange={(event) => { setSlugTouched(true); updateDraft({ slug: event.target.value }); }} value={draft.slug} /></span><small>Created automatically from the title. Use lowercase letters, numbers and hyphens.</small></label>
                   <label className="project-field">Project date *<input onChange={(event) => updateDraft({ date: event.target.value })} type="date" value={draft.date} /><small>Used to sort projects, newest first.</small></label>
@@ -609,7 +619,7 @@ export default function ProjectsTab({ onDirtyChange }: { onDirtyChange: (dirty: 
                 {draft.cover.src && <button className="project-secondary" onClick={() => updateDraft({ cover: { ...draft.cover, src: "", name: undefined } })} type="button">Remove cover</button>}
                 <label className="project-field">Cover alt text *<input maxLength={140} onChange={(event) => updateDraft({ cover: { ...draft.cover, alt: event.target.value } })} placeholder="Describe the cover photo" value={draft.cover.alt} /></label>
               </section>
-              <section className="project-panel project-live-preview"><h3>Card preview · Projects page</h3><div className="project-preview-image" style={backgroundStyle(draft.cover.src)} /><span className={`project-category ${draft.category || "none"}`}>{categories[draft.category as ProjectCategory] || "Category"}</span><b>{draft.title || "Project title"}</b><p>{draft.summary || "Your card summary will appear here."}</p></section>
+              <section className="project-panel project-live-preview"><h3>Card preview · Projects page</h3><div className="project-preview-image" style={backgroundStyle(draft.cover.src)} /><span className={`project-category ${draft.category || "none"}`}>{categoryLabel(draft.category) || "Category"}</span><b>{draft.title || "Project title"}</b><p>{draft.summary || "Your card summary will appear here."}</p></section>
             </aside>
           </div>
           <footer className="project-actionbar"><span>{error && <span role="alert">{error}</span>}</span><div>
@@ -622,7 +632,7 @@ export default function ProjectsTab({ onDirtyChange }: { onDirtyChange: (dirty: 
       )}
       {preview && <div className="project-modal-backdrop" onClick={() => setPreview(null)}>
         <section aria-label="Project preview" aria-modal="true" className="project-preview-modal" onClick={(event) => event.stopPropagation()} role="dialog">
-          <header><div><span className={`project-category ${preview.category || "none"}`}>{categories[preview.category as ProjectCategory] || "Category"}</span><h2>{preview.title || "Untitled project"}</h2><p>{dateLabel(preview.date)} · {preview.status === "published" ? "Published" : "Draft — not visible on the website"}</p></div><button aria-label="Close preview" onClick={() => setPreview(null)} type="button">×</button></header>
+          <header><div><span className={`project-category ${preview.category || "none"}`}>{categoryLabel(preview.category) || "Category"}</span><h2>{preview.title || "Untitled project"}</h2><p>{dateLabel(preview.date)} · {preview.status === "published" ? "Published" : "Draft — not visible on the website"}</p></div><button aria-label="Close preview" onClick={() => setPreview(null)} type="button">×</button></header>
           {preview.cover.src && <img alt={preview.cover.alt} className="project-preview-hero" src={preview.cover.src} />}
           <div className="project-preview-copy"><p>{preview.summary}</p><div dangerouslySetInnerHTML={{ __html: safeDescription(preview.description) }} /></div>
           {!!preview.gallery.length && <div className="project-preview-gallery">{preview.gallery.map((image, index) => <img alt={image.alt} key={`${image.src.slice(0, 35)}-${index}`} src={image.src} />)}</div>}

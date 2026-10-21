@@ -301,9 +301,13 @@
   font-weight: 600;
 }
 
-.project-category.csr { background: #e6f7ef; color: #087a4e; }
-.project-category.events { background: #ecebff; color: #1b0fd8; }
-.project-category.other { background: #fff8c2; color: #796900; }
+.project-category.meetings { background: #ecebff; color: #1b0fd8; }
+.project-category.incentives { background: #e6f7ef; color: #087a4e; }
+.project-category.conventions { background: #fff8c2; color: #796900; }
+.project-category.exhibitions { background: #ffeef1; color: #d42a6a; }
+.project-category.csr,
+.project-category.events,
+.project-category.other { background: #f1f0fd; color: var(--project-muted); }
 
 .project-card-body h3 {
   margin-top: 8px;

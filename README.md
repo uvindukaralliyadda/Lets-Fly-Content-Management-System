@@ -44,6 +44,9 @@ React/TypeScript; the remaining CMS tabs still use the original standalone
 HTML/JavaScript inside a protected same-origin iframe as a compatibility
 bridge. Projects use the `letsfly-cms-projects-v1` local-storage key, and
 `components/cms/projects/projects.json` contains the original sample projects.
+Their category filters and editor use Meetings, Incentives, Conventions, and
+Exhibitions; pre-existing CSR, Events, and Other records keep their stored
+category and remain visible under All until manually recategorized.
 Inquiries use the `lf_inquiries` local-storage key, with
 records shaped as `{ id, createdAt, customerName, email?, phone?, category,
 message, status?, comments? }`. Categories are Outbound Travel, Travel Sri
